@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<rss version="0.91">
+  <channel>
+    <title>Versioning Extension for Maven - Checkstyle report</title>
+    <link>http://github.com/jdcasey/versioning-extension</link>
+    <description>Versioning Extension for Maven - Checkstyle report</description>
+    <language>en-us</language>
+    <copyright>&#169;2013</copyright>
+    <item>
+      <title>File: 7,
+             Errors: 655,
+             Warnings: 0,
+             Infos: 0
+      </title>
+            <link>http://github.com/jdcasey/versioning-extension/checkstyle.html</link>
+      <description>
+        <p>Click <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html">here</a> for the full Checkstyle report.</p>
+
+        <table summary="Files" boder="1">
+          <thead>
+            <tr>
+              <th>Files</th>
+              <th style="width:30px;"><abbr title="Info">I</abbr></th>
+              <th style="width:30px;"><abbr title="Warning">W</abbr></th>
+              <th style="width:30px;"><abbr title="Error">E</abbr></th>
+            </tr>
+          </thead>
+          <tbody>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.VersioningModifier.java">org/commonjava/maven/ext/versioning/VersioningModifier.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  225
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.VersioningModelProcessor.java">org/commonjava/maven/ext/versioning/VersioningModelProcessor.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  64
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.VersionCalculator.java">org/commonjava/maven/ext/versioning/VersionCalculator.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  136
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.VersioningSession.java">org/commonjava/maven/ext/versioning/VersioningSession.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  31
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.IdUtils.java">org/commonjava/maven/ext/versioning/IdUtils.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  51
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.VersioningEventSpy.java">org/commonjava/maven/ext/versioning/VersioningEventSpy.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  73
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://github.com/jdcasey/versioning-extension/checkstyle.html#org.commonjava.maven.ext.versioning.ProjectVersioningScanner.java">org/commonjava/maven/ext/versioning/ProjectVersioningScanner.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  75
+                </td>
+              </tr>
+                      </tbody>
+        </table>
+        
+      </description>
+    </item>
+  </channel>
+</rss>
+
