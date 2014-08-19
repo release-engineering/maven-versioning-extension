@@ -1,5 +1,6 @@
 package org.commonjava.maven.ext.versioning;
 
+import static org.commonjava.maven.ext.versioning.IdUtils.gav;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -7,6 +8,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -18,6 +20,7 @@ import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Writer;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionRequest;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.codehaus.plexus.util.IOUtil;
@@ -314,7 +317,7 @@ public class VersioningCalculatorTest
     public void incrementExistingSerialSuffix_UsingRepositoryMetadata()
         throws Exception
     {
-        setMetadataVersions( "1.2.GA-foo-3", "1.2.GA-foo-2", "1.2.GA-foo-9" );
+        setMetadataVersions( GROUP_ID, ARTIFACT_ID, "1.2.GA-foo-3", "1.2.GA-foo-2", "1.2.GA-foo-9" );
 
         final Properties props = new Properties();
 
@@ -330,10 +333,48 @@ public class VersioningCalculatorTest
     }
 
     @Test
+    public void incrementExistingSerialSuffix_TwoProjects_UsingRepositoryMetadata_AvailableOnlyForOne()
+        throws Exception
+    {
+        final String v = "1.2.GA";
+        final String os = "-foo-1";
+        final String ns = "foo-10";
+
+        setMetadataVersions( GROUP_ID, ARTIFACT_ID, "1.2.GA-foo-3", "1.2.GA-foo-2", "1.2.GA-foo-9" );
+        final MavenProject project1 = new MavenProject();
+        project1.getModel()
+                .setGroupId( GROUP_ID );
+        project1.getModel()
+                .setArtifactId( ARTIFACT_ID );
+        project1.getModel()
+                .setVersion( v + os );
+
+        final String a2 = ARTIFACT_ID + "-dep";
+        final MavenProject project2 = new MavenProject();
+        project2.getModel()
+                .setGroupId( GROUP_ID );
+        project2.getModel()
+                .setArtifactId( a2 );
+        project2.getModel()
+                .setVersion( v + os );
+
+        final Properties props = new Properties();
+
+        props.setProperty( VersioningSession.INCREMENT_SERIAL_SUFFIX_SYSPROP, "foo-0" );
+        setupSession( props );
+
+        final Map<String, String> result = modder.calculateVersioningChanges( Arrays.asList( project1, project2 ) );
+
+        assertThat( result.get( gav( GROUP_ID, ARTIFACT_ID, v + os ) ), equalTo( v + "-" + ns ) );
+        assertThat( result.get( gav( GROUP_ID, a2, v + os ) ), equalTo( v + "-" + ns ) );
+    }
+
+    @Test
     public void incrementExistingSerialSuffix_UsingRepositoryMetadataWithIrrelevantVersions()
         throws Exception
     {
-        setMetadataVersions( "0.0.1", "0.0.2", "0.0.3", "0.0.4", "0.0.5", "0.0.6", "0.0.7", "0.0.7.redhat-1" );
+        setMetadataVersions( GROUP_ID, ARTIFACT_ID, "0.0.1", "0.0.2", "0.0.3", "0.0.4", "0.0.5", "0.0.6", "0.0.7",
+                             "0.0.7.redhat-1" );
 
         final Properties props = new Properties();
 
@@ -348,7 +389,7 @@ public class VersioningCalculatorTest
         assertThat( result, equalTo( v + "." + ns ) );
     }
 
-    private void setMetadataVersions( final String... versions )
+    private void setMetadataVersions( final String groupId, final String artifactId, final String... versions )
         throws IOException
     {
         final Metadata md = new Metadata();
@@ -368,13 +409,14 @@ public class VersioningCalculatorTest
             IOUtil.close( stream );
         }
 
-        repoSystem.setMetadataFile( mdFile );
+        repoSystem.setMetadataFile( groupId, artifactId, mdFile );
     }
 
     private String calculate( final String version )
         throws Exception
     {
-        return modder.calculate( GROUP_ID, ARTIFACT_ID, version );
+        return modder.calculate( GROUP_ID, ARTIFACT_ID, version )
+                     .renderVersion();
     }
 
     private VersioningSession setupSession( final Properties properties )

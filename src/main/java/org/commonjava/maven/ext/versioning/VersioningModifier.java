@@ -147,6 +147,7 @@ public class VersioningModifier
             if ( versionsByGAV.containsKey( parentGAV ) )
             {
                 final String newVersion = versionsByGAV.get( parentGAV );
+                logger.info( "Modified version of: " + parentGAV + " is: " + newVersion );
                 parent.setVersion( newVersion );
                 changed = true;
             }
@@ -159,7 +160,7 @@ public class VersioningModifier
             if ( newVersion != null && model.getVersion() != null )
             {
                 model.setVersion( newVersion );
-                logger.info("Changed main version in " + gav(model));
+                logger.info( "Changed main version in " + gav( model ) + " to: " + newVersion );
                 changed = true;
             }
         }
@@ -193,6 +194,7 @@ public class VersioningModifier
                 {
                     gav = gav( interp.interpolate( d.getGroupId(), ri ), interp.interpolate( d.getArtifactId(), ri ), interp.interpolate( d.getVersion(), ri ) );
                     final String newVersion = versionsByGAV.get( gav );
+                    logger.info( "Modified version of: " + gav + " is: " + newVersion );
                     if ( newVersion != null )
                     {
                         d.setVersion( newVersion );
@@ -208,6 +210,7 @@ public class VersioningModifier
                 {
                     gav = gav( interp.interpolate( d.getGroupId(), ri ), interp.interpolate( d.getArtifactId(), ri ), interp.interpolate( d.getVersion(), ri ) );
                     final String newVersion = versionsByGAV.get( gav );
+                    logger.info( "Modified version of: " + gav + " is: " + newVersion );
                     if ( newVersion != null && d.getVersion() != null )
                     {
                         d.setVersion( newVersion );
@@ -257,7 +260,7 @@ public class VersioningModifier
                     logger.info( "Rewriting: " + project.getId() + "\n       to POM: " + pom );
 
                     final SAXBuilder builder = new SAXBuilder();
-                    Document doc = builder.build( pom );
+                    final Document doc = builder.build( pom );
 
                     Reader pomReader = null;
                     Model model;

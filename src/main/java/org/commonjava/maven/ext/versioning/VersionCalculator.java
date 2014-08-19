@@ -39,7 +39,7 @@ public class VersionCalculator
 
     private static final String SERIAL_SUFFIX_PATTERN = "([^-.]+)(?:([-.])(\\d+))?$";
 
-    private static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
+    public static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
 
     @Requirement
     private RepositorySystem repositorySystem;
@@ -60,34 +60,62 @@ public class VersionCalculator
     public Map<String, String> calculateVersioningChanges( final Collection<MavenProject> projects )
         throws VersionModifierException
     {
-        final Map<String, String> versionsByGA = new HashMap<String, String>();
-
+        final Map<String, VersionCalculation> calculationsByGA = new HashMap<String, VersionCalculation>();
+        boolean incremental = false;
         for ( final MavenProject project : projects )
         {
             final String originalVersion = project.getVersion();
-            final String modifiedVersion = calculate( project.getGroupId(), project.getArtifactId(), originalVersion );
 
-            if ( !modifiedVersion.equals( originalVersion ) )
+            final VersionCalculation modifiedVersion =
+                calculate( project.getGroupId(), project.getArtifactId(), originalVersion );
+
+            logger.info( "\n\nModifying version of: " + project.getGroupId() + ":" + project.getArtifactId()
+                + "\n    from: " + project.getVersion() + "\n    to: " + modifiedVersion );
+
+            if ( modifiedVersion.hasCalculation() )
             {
-                versionsByGA.put( gav( project ), modifiedVersion );
+                incremental = incremental || modifiedVersion.isIncremental();
+                calculationsByGA.put( gav( project ), modifiedVersion );
             }
+        }
+
+        if ( incremental )
+        {
+            int maxQualifier = 1;
+            for ( final VersionCalculation calc : calculationsByGA.values() )
+            {
+                final int i = calc.getIncrementalQualifier();
+                maxQualifier = maxQualifier > i ? maxQualifier : i;
+            }
+
+            for ( final VersionCalculation calc : calculationsByGA.values() )
+            {
+                calc.setIncrementalQualifier( maxQualifier );
+            }
+        }
+
+        final Map<String, String> versionsByGA = new HashMap<String, String>();
+        for ( final Map.Entry<String, VersionCalculation> entry : calculationsByGA.entrySet() )
+        {
+            versionsByGA.put( entry.getKey(), entry.getValue()
+                                                   .renderVersion() );
         }
 
         return versionsByGA;
     }
 
-    public String calculate( final String groupId, final String artifactId, final String originalVersion )
+    VersionCalculation calculate( final String groupId, final String artifactId, final String originalVersion )
         throws VersionModifierException
     {
-        String result = originalVersion;
+        String baseVersion = originalVersion;
 
         boolean snapshot = false;
         // If we're building a snapshot, make sure the resulting version ends
         // in "-SNAPSHOT"
-        if ( result.endsWith( SNAPSHOT_SUFFIX ) )
+        if ( baseVersion.endsWith( SNAPSHOT_SUFFIX ) )
         {
             snapshot = true;
-            result = result.substring( 0, result.length() - SNAPSHOT_SUFFIX.length() );
+            baseVersion = baseVersion.substring( 0, baseVersion.length() - SNAPSHOT_SUFFIX.length() );
         }
 
         final VersioningSession session = VersioningSession.getInstance();
@@ -102,7 +130,7 @@ public class VersionCalculator
         final Pattern serialSuffixPattern = Pattern.compile( SERIAL_SUFFIX_PATTERN );
         final Matcher suffixMatcher = serialSuffixPattern.matcher( suff );
 
-        String useSuffix = suff;
+        final VersionCalculation vc = new VersionCalculation( originalVersion, baseVersion );
         if ( suffixMatcher.matches() )
         {
             // the "redhat" in "redhat-1"
@@ -113,13 +141,14 @@ public class VersionCalculator
                 sep = "-";
             }
 
-            final int idx = result.indexOf( suffixBase );
+            final int idx = baseVersion.indexOf( suffixBase );
 
             if ( idx > 1 )
             {
                 // trim the old suffix off.
-                result = result.substring( 0, idx - 1 );
-                logger.debug( "Trimmed version (without pre-existing suffix): " + result );
+                baseVersion = baseVersion.substring( 0, idx - 1 );
+                vc.setBaseVersion( baseVersion );
+                logger.debug( "Trimmed version (without pre-existing suffix): " + baseVersion );
             }
 
             // If we're using serial suffixes (-redhat-N) and the flag is set
@@ -129,6 +158,8 @@ public class VersionCalculator
             if ( suff.equals( incrementalSerialSuffix ) )
             {
                 logger.debug( "Resolving suffixes already found in metadata to determine increment base." );
+
+                vc.setVersionSuffix( suffixBase );
 
                 final List<String> versionCandidates = new ArrayList<String>();
                 versionCandidates.add( originalVersion );
@@ -154,9 +185,10 @@ public class VersionCalculator
                         }
 
                         final String base = version.substring( 0, baseIdx - 1 );
-                        if ( !result.equals( base ) )
+                        if ( !baseVersion.equals( base ) )
                         {
-                            logger.debug( "Ignoring irrelevant version: '" + version + "' ('" + base + "' doesn't match on base-version: '" + result
+                            logger.debug( "Ignoring irrelevant version: '" + version + "' ('" + base
+                                + "' doesn't match on base-version: '" + baseVersion
                                 + "')." );
                             continue;
                         }
@@ -176,30 +208,20 @@ public class VersionCalculator
                     }
                 }
 
-                useSuffix = suffixBase + sep + ( maxSerial + 1 );
+                vc.setSuffixSeparator( sep );
+                vc.setIncrementalQualifier( maxSerial + 1 );
             }
-
-            // Now, pare back the trimmed version base to remove non-alphanums
-            // like '.' and '-' so we have more control over them...
-            int trim = 0;
-
-            // calculate the trim size
-            for ( int i = result.length() - 1; i > 0 && !Character.isLetterOrDigit( result.charAt( i ) ); i-- )
+            else
             {
-                trim++;
-            }
-
-            // perform the actual trim to get back to an alphanumeric ending.
-            if ( trim > 0 )
-            {
-                result = result.substring( 0, result.length() - trim );
+                vc.setVersionSuffix( suff );
             }
         }
         // If we're not using a serial suffix, and the version already ends
         // with the chosen suffix, there's nothing to do!
         else if ( originalVersion.endsWith( suffix ) )
         {
-            return originalVersion;
+            vc.clear();
+            return vc;
         }
 
         // assume the version is of the form 1.2.3.GA, where appending the
@@ -210,23 +232,23 @@ public class VersionCalculator
         // now, check the above assumption...
         // if the version is of the form: 1.2.3, then we need to append the
         // suffix as a final version part using '.'
-        logger.info( "Partial result: " + result );
-        if ( result.matches( ".+[-.]\\d+" ) )
+        logger.info( "Partial result: " + baseVersion );
+        if ( baseVersion.matches( ".+[-.]\\d+" ) )
         {
             sep = ".";
         }
 
+        vc.setBaseVersionSeparator( sep );
+
         // TODO OSGi fixup for versions like 1.2.GA or 1.2 (too few parts)
 
-        result += sep + useSuffix;
-
         // tack -SNAPSHOT back on if necessary...
-        if ( session.preserveSnapshot() && snapshot )
-        {
-            result += SNAPSHOT_SUFFIX;
-        }
+        vc.setSnapshot( session.preserveSnapshot() && snapshot );
+        //        {
+        //            result += SNAPSHOT_SUFFIX;
+        //        }
 
-        return result;
+        return vc;
     }
 
     private Set<String> getMetadataVersions( final String groupId, final String artifactId, final VersioningSession session )

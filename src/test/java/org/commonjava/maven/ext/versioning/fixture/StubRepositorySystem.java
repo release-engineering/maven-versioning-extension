@@ -1,9 +1,13 @@
 package org.commonjava.maven.ext.versioning.fixture;
 
+import static org.commonjava.maven.ext.versioning.IdUtils.ga;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.sonatype.aether.RepositorySystem;
 import org.sonatype.aether.RepositorySystemSession;
@@ -44,7 +48,7 @@ public class StubRepositorySystem
     implements RepositorySystem
 {
 
-    private File metadataFile;
+    private final Map<String, File> metadataFiles = new HashMap<String, File>();
 
     @Override
     public VersionRangeResult resolveVersionRange( final RepositorySystemSession session,
@@ -125,9 +129,9 @@ public class StubRepositorySystem
         return null;
     }
 
-    public void setMetadataFile( final File metadataFile )
+    public void setMetadataFile( final String groupId, final String artifactId, final File metadataFile )
     {
-        this.metadataFile = metadataFile;
+        this.metadataFiles.put( ga( groupId, artifactId ), metadataFile );
     }
 
     @Override
@@ -138,7 +142,14 @@ public class StubRepositorySystem
         for ( final MetadataRequest req : requests )
         {
             Metadata md = req.getMetadata();
-            md = md.setFile( metadataFile );
+            System.out.println( "Retrieving metadata for: " + md.getGroupId() + ":" + md.getArtifactId() );
+
+            final File metadataFile = metadataFiles.get( ga( md.getGroupId(), md.getArtifactId() ) );
+            if ( metadataFile != null )
+            {
+                md = md.setFile( metadataFile );
+            }
+
             final MetadataResult result = new MetadataResult( req );
             result.setMetadata( md );
             results.add( result );
