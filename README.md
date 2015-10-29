@@ -3,6 +3,14 @@
 A Maven extension which manages the current version of the current project. The extension should
 be installed in `$M2_HOME/lib/ext`. When it is activated it will write a log file `target/versioning.log`.
 
+<table border="3">
+<tr>
+<td>
+    <b>WARNING</b> : This extension has been deprecated and its functionality rolled into https://github.com/release-engineering/pom-manipulation-ext.
+</td>
+</tr>
+</table>
+
 
 The following configuration is available:
 
